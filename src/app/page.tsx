@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function Home() {
-  //https://gitlab.com/online-app/pokemon-weather-test/-/tree/main/developer
   const [city, setCity] = useState("");
   const [data, setData] = useState<any>(null);
   const [dataPokemon, setDataPokemon] = useState<any>(null);
+  const [pokemonDetails, setPokemonDetails] = useState<any>(null);
+  const [randomPokemon, setRandomPokemon] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -21,7 +23,7 @@ export default function Home() {
           let pokemonType = "";
 
           switch (true) {
-            //avoid errors when have a float number(ex: 5.1)
+            // Avoid errors when dealing with a float number (e.g., 5.1)
             case temperature < 5:
               pokemonType = "ice";
               break;
@@ -51,6 +53,12 @@ export default function Home() {
           const responsePokemon = await fetch(apiURLPokemon);
           const jsonDataPokemon = await responsePokemon.json();
           setDataPokemon(jsonDataPokemon);
+
+          const randomPokemonData = getRandomPokemon(jsonDataPokemon);
+          if (randomPokemonData) {
+            setRandomPokemon(randomPokemonData);
+            fetchDataPokemonDetails(randomPokemonData.pokemon.url);
+          }
         }
       } catch (error) {
         console.log(error);
@@ -62,17 +70,23 @@ export default function Home() {
     }
   }, [city]);
 
-  const getRandomPokemon = () => {
-    if (dataPokemon && dataPokemon.pokemon) {
-      const randomIndex = Math.floor(
-        Math.random() * dataPokemon.pokemon.length
-      );
-      return dataPokemon.pokemon[randomIndex];
+  const fetchDataPokemonDetails = async (pokemonUrl: string) => {
+    try {
+      const responsePokemonDetails = await fetch(pokemonUrl);
+      const jsonDataPokemonDetails = await responsePokemonDetails.json();
+      setPokemonDetails(jsonDataPokemonDetails);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getRandomPokemon = (pokemonData: any) => {
+    if (pokemonData && pokemonData.pokemon) {
+      const randomIndex = Math.floor(Math.random() * pokemonData.pokemon.length);
+      return pokemonData.pokemon[randomIndex];
     }
     return null;
   };
-
-  const randomPokemon = getRandomPokemon();
 
   return (
     <div className="flex flex-col items-center justify-center py-10 gap-5">
@@ -103,6 +117,16 @@ export default function Home() {
                   <h3 className="text-[22px] pb-1">Random Pokémon</h3>
                   <p>
                     <i>Name:</i> {randomPokemon.pokemon.name}
+                    {pokemonDetails && (
+                      <div className="pt-5">
+                        <Image
+                          width={200}
+                          height={200}
+                          src={pokemonDetails.sprites.other['official-artwork'].front_default}
+                          alt={pokemonDetails.name}
+                        />
+                      </div>
+                    )}
                   </p>
                 </div>
               )}
